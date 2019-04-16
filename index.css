@@ -1,0 +1,58 @@
+#table{
+    height: 500px;
+}
+#table td{
+    background-color: #0488cf;
+    border-top: 1px solid #0488cf;
+}
+table{
+    width: 60% !important;
+    margin: auto !important;
+    margin-top: 50px !important;
+}
+table td{
+    text-align: center;
+}
+table .fas{
+    font-size: 60px;
+}
+
+
+.red{
+    color: #ff7878;
+}
+.red:hover{
+    color: red;
+}
+.orange{
+    color: #ffd17d;
+}
+.orange:hover{
+    color: orange;
+}
+.white{
+    color: white
+}
+.grey{
+    color: grey;
+}
+.disable{
+    pointer-events: none;
+    cursor: default;
+}
+.green{
+    background-color: #17e417;
+}
+
+#choice .fas{
+    position: relative;
+    left: 0px;
+    cursor: pointer;
+}
+#winning{
+    text-align: center;
+    padding-top: 30px;
+    font-weight: bold;
+    font-size: 36px;
+}
+
