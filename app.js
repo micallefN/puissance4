@@ -2,8 +2,15 @@ var http = require('http');
 
 // Chargement du fichier index.html affiché au client
 var server = http.createServer(function (req, res) {
-    res.writeHead(200, {"Content-Type": "text/html"});
-    res.end('hello');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Request-Method', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    if ( req.method === 'OPTIONS' ) {
+        res.writeHead(200);
+        res.end();
+        return;
+    }
 });
 
 // Chargement de socket.io
