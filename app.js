@@ -17,39 +17,52 @@ var server = http.createServer(function (req, res) {
 // Chargement de socket.io
 var io = require('socket.io').listen(server);
 
-let player1 = '';
-let player2 = '';
+
+let first = true;
+let room = '';
+
+function makeid(length) {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for (var i = 0; i < length; i++)
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
 
 // Quand un client se connecte, on le note dans la console
 io.sockets.on('connection', function (socket) {
 
-    if (player1 === '') {
-        player1 = socket.id;
+    if (first) {
+        first = false;
+        room = makeid(10);
         socket.emit('turn', true);
         socket.emit('color', 'red');
+        socket.join(room);
+        socket.joinedRoom = room
 
-    } else if (player2 === '' && socket.id !== player1) {
-        player2 = socket.id;
+    } else {
+        first = true;
         socket.emit('turn', false);
         socket.emit('color', 'orange');
+        socket.join(room);
+        socket.joinedRoom = room
 
     }
 
     socket.on('message', function (message, blockedTable) {
-        socket.broadcast.emit('message', message, blockedTable);
+        socket.broadcast.to(socket.joinedRoom).emit('message', message, blockedTable);
     });
     socket.on('turn', function(playerTurn){
-        socket.broadcast.emit('turn', playerTurn);
+        socket.broadcast.to(socket.joinedRoom).emit('turn', playerTurn);
     })
 
     socket.on('disconnect', function () {
-        socket.broadcast.emit('reset', true);
-        if (socket.id === player1) {
-            player1 = '';
-        } else {
-            player2 = '';
-        }
+        socket.broadcast.to(socket.joinedRoom).emit('reset', true);
+
     })
+
 });
 
 
