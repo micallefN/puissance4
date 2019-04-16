@@ -1,4 +1,5 @@
 var http = require('http');
+var fs = require('fs');
 
 // Chargement du fichier index.html affiché au client
 var server = http.createServer(function (req, res) {
@@ -6,11 +7,11 @@ var server = http.createServer(function (req, res) {
     res.setHeader('Access-Control-Request-Method', '*');
     res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
     res.setHeader('Access-Control-Allow-Headers', '*');
-    if ( req.method === 'OPTIONS' ) {
-        res.writeHead(200);
-        res.end();
-        return;
-    }
+    fs.readFile('./index.html', 'utf-8', function(error, content) {
+        res.writeHead(200, {"Content-Type": "text/html"});
+        res.end(content);
+    });
+
 });
 
 // Chargement de socket.io
