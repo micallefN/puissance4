@@ -79,11 +79,9 @@ io.sockets.on('connection', function (socket) {
         }
 
         if(rooms[i].player1Ready === true && rooms[i].player2Ready === true){
-            console.log('voilu');
             socket.in(socket.roomName).emit('launchGame', rooms[i]);
             socket.emit('launchGame', rooms[i]);
         } else {
-            console.log('moche');
             socket.in(socket.roomName).emit('setWaitingRoom', rooms[i]);
             socket.emit('setWaitingRoom', rooms[i]);
         }
@@ -99,6 +97,10 @@ io.sockets.on('connection', function (socket) {
     })
 
     socket.on('disconnect', function () {
+        rooms = rooms.filter(x => {
+            return x.room != socket.roomName;
+        })
+        console.log(rooms);
         socket.broadcast.to(socket.roomName).emit('reset', true);
 
     })
