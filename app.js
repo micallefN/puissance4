@@ -17,55 +17,96 @@ var server = http.createServer(function (req, res) {
 // Chargement de socket.io
 var io = require('socket.io').listen(server);
 
-
 let first = true;
-let room = '';
-
-function makeid(length) {
-    var text = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    for (var i = 0; i < length; i++)
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    return text;
-}
-
+let rooms = [];
 // Quand un client se connecte, on le note dans la console
 io.sockets.on('connection', function (socket) {
 
-    if (first) {
-        first = false;
-        room = makeid(10);
-        socket.emit('turn', true);
-        socket.emit('color', 'red');
-        socket.join(room);
-        socket.joinedRoom = room
+    socket.emit('connection', function(){});
 
-    } else {
-        first = true;
-        socket.emit('turn', false);
-        socket.emit('color', 'orange');
-        socket.join(room);
-        socket.joinedRoom = room
+    socket.on('setPseudo', function(pseudo){
+        socket.playerPseudo = pseudo;
+    });
 
-    }
+    socket.on('createRoom', function(room){
+        socket.roomName = room;
+        socket.join(room);
+        let roomDetail = {
+            player1 : socket.playerPseudo,
+            room : socket.roomName,
+            player1Ready: false,
+            player2Ready: false
+        }
+        rooms.push(roomDetail);
+
+        socket.broadcast.emit('getRooms', rooms);
+
+        socket.emit('setWaitingRoom', roomDetail);
+    });
+
+    socket.on('joinRoom', function(room){
+        socket.join(room);
+        socket.roomName = room;
+        let i;
+        for(i = 0; i < rooms.length; i++){
+            if(rooms[i].room === room){
+                rooms[i].player2 = socket.playerPseudo;
+                break;
+            }
+        }
+
+        socket.broadcast.emit('getRooms', rooms);
+        socket.in(socket.roomName).emit('setWaitingRoom', rooms[i]);
+        socket.emit('setWaitingRoom', rooms[i]);
+
+    });
+
+    socket.on('askRooms', function(){
+        socket.emit('getRooms', rooms);
+    });
+
+    socket.on('setReady', function(room){
+        let i;
+        for(i = 0; i < rooms.length; i++){
+            if(rooms[i].room === room){
+                if(socket.playerPseudo === rooms[i].player1){
+                    rooms[i].player1Ready = true;
+                } else {
+                    rooms[i].player2Ready = true;
+                }
+                break;
+            }
+        }
+
+        if(rooms[i].player1Ready === true && rooms[i].player2Ready === true){
+            console.log('voilu');
+            socket.in(socket.roomName).emit('launchGame', rooms[i]);
+            socket.emit('launchGame', rooms[i]);
+        } else {
+            console.log('moche');
+            socket.in(socket.roomName).emit('setWaitingRoom', rooms[i]);
+            socket.emit('setWaitingRoom', rooms[i]);
+        }
+
+
+    });
 
     socket.on('message', function (message, blockedTable) {
-        socket.broadcast.to(socket.joinedRoom).emit('message', message, blockedTable);
+        socket.broadcast.to(socket.roomName).emit('message', message, blockedTable);
     });
     socket.on('turn', function(playerTurn){
-        socket.broadcast.to(socket.joinedRoom).emit('turn', playerTurn);
+        socket.broadcast.to(socket.roomName).emit('turn', playerTurn);
     })
 
     socket.on('disconnect', function () {
-        socket.broadcast.to(socket.joinedRoom).emit('reset', true);
+        socket.broadcast.to(socket.roomName).emit('reset', true);
 
     })
 
     socket.on('animate', function(idButton, heightButton){
-        socket.broadcast.to(socket.joinedRoom).emit('animate', idButton, heightButton);
+        socket.broadcast.to(socket.roomName).emit('animate', idButton, heightButton);
     })
+
 
 });
 

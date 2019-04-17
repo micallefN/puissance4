@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
           integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
     <style>
+        #log, #pseudoDisplay, #roomNameDisplay{
+            margin-top: 70px;
+        }
         #table{
             height: 500px;
         }
@@ -65,25 +68,16 @@
             font-weight: bold;
             font-size: 36px;
         }
-
-
     </style>
-<!--    <link rel="stylesheet" href="index.css">-->
 </head>
 
 <body>
+
+
 <div class="container">
 
-    <div>
-        <table class="table" id="choice">
-
-        </table>
-    </div>
-
-    <table class="table" id="table">
-
-    </table>
 </div>
+
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
@@ -104,13 +98,108 @@
         [{value: 'white'},{value: 'white'},{value: 'white'},{value: 'white'},{value: 'white'},{value: 'white'},{value: 'white'}],
     ]
 
+    let $container = $('.container');
+
     var socket = io.connect('https://shalo4.herokuapp.com/');
     //var socket = io.connect('http://localhost:8080/');
 
+    let pseudo= '';
+    let room = '';
+    let inGame = false;
     let color;
     let turn = false;
 
     let tableau = tableFixed;
+
+    const setRoomslist = () => {
+        socket.emit('askRooms');
+    }
+    socket.on('getRooms', function(appRooms){
+        if(!inGame){
+            let $container = $('.container');
+            $('#waitingList').remove();
+            $container.append('<div><table class="table" id="waitingList"><tr><th>Nom de la salle</th><th>Joueur en attente</th><th>Rejoindre</th></tr></table></div>');
+            appRooms.forEach(function(room){
+                if(!('player2' in room)){
+                    $('#waitingList').append('<tr><td>' + room.room + '</td><td>' + room.player1 + '</td><td><button id="'+ room.room +'" class="btn btn-primary">rejoindre</button></td></tr>')
+                }
+            })
+            $('#waitingList button').on('click', event => {
+                room = $(event.currentTarget).attr('id');
+                inGame = true;
+                socket.emit('joinRoom', room);
+            })
+        }
+    })
+
+    const setLobby = () => {
+        $container.append('<div id="pseudoDisplay"><p>Bienvenue : '+ pseudo +'</p></div>');
+        $container.append('<div id="roomCrea" class="form-group">' +
+            '<label for="roomName">Nom de la room</label>' +
+            '<p><input class="form-control" id="roomName"></p>' +
+            '<button id="validationRoom" class="btn btn-primary">Creer une room</button>' +
+            '</div>');
+        $('#validationRoom').on('click', () => {
+            room = $('#roomName').val();
+            inGame = true;
+            socket.emit('createRoom', $('#roomName').val());
+        })
+
+        setRoomslist();
+    }
+
+    socket.on('connection', function(){
+
+        $('.container').append('<div class="form-group" id="log">' +
+            '<label for="name">Merci de renseigner un pseudo</label>' +
+            '<p><input type="texte" id="name" class="form-control"></p>' +
+            '<button id="pseudoValidation" class="btn btn-primary">Valider</button>' +
+            '</div>');
+
+        $('#pseudoValidation').on('click', () => {
+
+            pseudo = $('#name').val();
+            socket.emit('setPseudo', pseudo);
+            $('#log').remove();
+
+            setLobby();
+
+        })
+
+    })
+
+    socket.on('setWaitingRoom', function(room){
+        $container.children().remove();
+        $container.append('<div id="roomNameDisplay"><p>Salle : '+ room.room +'</p></div>');
+        $container.append('<table class="table" id="playerList"><tr><th>Joueur</th><th>Etat</th></tr></table>');
+
+        let btnPLayer = '<button class="btn btn-primary">Prêt</button>';
+        let btnReady = '<i class="fas fa-check"></i>';
+
+        if(room.player1Ready){
+            $('#playerList').append('<tr><td>'+ room.player1 +'</td><td>'+ btnReady +'</td></tr>');
+        } else {
+            $('#playerList').append('<tr><td>'+ room.player1 +'</td><td>'+ btnPLayer +'</td></tr>');
+        }
+
+
+        if('player2' in room){
+            if(room.player2Ready){
+                $('#playerList').append('<tr><td>'+ room.player2 +'</td><td>'+ btnReady +'</td></tr>');
+            } else {
+                $('#playerList').append('<tr><td>'+ room.player2 +'</td><td>'+ btnPLayer +'</td></tr>');
+            }
+        }
+
+        $('#playerList button').on('click', event => {
+            socket.emit('setReady', room.room);
+        })
+
+
+    })
+
+
+    // partie puissance 4 ////////////////////////////////////////////////////////////////////////////////////////////
 
     socket.on('color', function (colorStart) {
 
@@ -272,9 +361,6 @@
 
     }
 
-    setTable(tableau);
-    setLineColor(color);
-
     socket.on('message', function (message, blockedTable) {
         tableau = message;
         idBlocked = blockedTable;
@@ -315,9 +401,29 @@
         $('#' + idButton + ' ').animate({top: heightButton, left: '1px'}, 700, function () {});
     })
 
+    socket.on('launchGame', function(gameRoom){
+        $('.container').children().remove();
+        $('.container').append('<div><table class="table" id="choice"></table></div><table class="table" id="table"></table>');
+
+        if(pseudo === gameRoom.player1){
+            color = 'red'
+            turn = true;
+        } else {
+            color = 'orange'
+        }
+
+        setTable(tableau);
+        setLineColor(color);
+    })
+
+
+
+
+
+
+
+
 </script>
-<!--<script type="text/javascript" src="datas.js"></script>-->
-<!--<script type="text/javascript" src="script.js"></script>-->
 <script>
 
 </script>
