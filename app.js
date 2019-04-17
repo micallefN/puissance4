@@ -63,6 +63,10 @@ io.sockets.on('connection', function (socket) {
 
     })
 
+    socket.on('animate', function(idButton, heightButton){
+        socket.broadcast.to(socket.joinedRoom).emit('animate', idButton, heightButton);
+    })
+
 });
 
 

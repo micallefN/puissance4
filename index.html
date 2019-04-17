@@ -247,7 +247,7 @@
                     }
                 }
 
-
+                socket.emit('animate', $id, heights[i]);
                 $(event.currentTarget).animate({top: heights[i], left: '1px'}, 700, function () {
 
                     $('#choice .fas').removeClass('disable');
@@ -291,6 +291,28 @@
         setLineColor(color);
 
         checkWin(testColorWin);
+    })
+
+    socket.on('animate', function(idButton, heightButton){
+
+        let colorOther ='';
+        if (color === 'red'){
+            colorOther = 'orange';
+        } else {
+            colorOther = 'red';
+        }
+
+        $('#choice').children().remove();
+
+        $('#choice').append('<tr><td><i class="fas fa-circle ' + colorOther + '" id="0"></i></td>\n' +
+            '                <td><i class="fas fa-circle ' + colorOther + '" id="1"></i></td>\n' +
+            '                <td><i class="fas fa-circle ' + colorOther + '" id="2"></i></td>\n' +
+            '                <td><i class="fas fa-circle ' + colorOther + '" id="3"></i></td>\n' +
+            '                <td><i class="fas fa-circle ' + colorOther + '" id="4"></i></td>\n' +
+            '                <td><i class="fas fa-circle ' + colorOther + '" id="5"></i></td>\n' +
+            '                <td><i class="fas fa-circle ' + colorOther + '" id="6"></i></td></tr>');
+
+        $('#' + idButton + ' ').animate({top: heightButton, left: '1px'}, 700, function () {});
     })
 
 </script>
